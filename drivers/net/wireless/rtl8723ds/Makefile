@@ -101,7 +101,7 @@ EXTRA_CFLAGS += -DCONFIG_RTW_ANDROID=$(CONFIG_RTW_ANDROID)
 endif
 
 ########################## Debug ###########################
-CONFIG_RTW_DEBUG = y
+CONFIG_RTW_DEBUG = n
 # default log level is _DRV_INFO_ = 4,
 # please refer to "How_to_set_driver_debug_log_level.doc" to set the available level.
 CONFIG_RTW_LOG_LEVEL = 2
@@ -2238,6 +2238,7 @@ EXTRA_CFLAGS += -DCONFIG_CONCURRENT_MODE
 EXTRA_CFLAGS += -DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT
 EXTRA_CFLAGS += -DCONFIG_FULL_CH_IN_P2P_HANDSHAKE
 EXTRA_CFLAGS += -DCONFIG_SEL_P2P_IFACE
+EXTRA_CFLAGS += -DCONFIG_RESUME_IN_WORKQUEUE
 ARCH := riscv
 MODULE_NAME := rtl8723ds
 endif 

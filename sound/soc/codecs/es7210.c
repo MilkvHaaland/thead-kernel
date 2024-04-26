@@ -1925,7 +1925,7 @@ static int es7210_i2c_probe(struct i2c_client *i2c_client,
                 ES7210_CHANNELS_MAX = MIC_CHN_2;
                 ADC_DEV_MAXNUM =  1;
         }
-        //printk("%s es7210->tdm_mode=%d channels-max=%d ADC_DEV_MAXNUM=%d\n", __func__, es7210->tdm_mode, ES7210_CHANNELS_MAX, ADC_DEV_MAXNUM);
+        pr_debug("%s es7210->tdm_mode=%d channels-max=%d ADC_DEV_MAXNUM=%d\n", __func__, es7210->tdm_mode, ES7210_CHANNELS_MAX, ADC_DEV_MAXNUM);
 
         es7210->mvdd = devm_regulator_get(&i2c_client->dev, "MVDD");
         if (IS_ERR(es7210->mvdd)) {

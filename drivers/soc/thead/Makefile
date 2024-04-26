@@ -2,3 +2,4 @@
 obj-$(CONFIG_LIGHT_IOPMP)	+= light-iopmp.o
 obj-$(CONFIG_LIGHT_SUSPEND)	+= pm-light.o
 obj-$(CONFIG_LIGHT_REBOOTMODE)	+= light_event.o
+obj-y += light_regdump.o

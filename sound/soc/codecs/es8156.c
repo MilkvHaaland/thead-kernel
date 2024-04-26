@@ -525,7 +525,7 @@ static int es8156_suspend(struct snd_soc_component *codec)
 {
 	struct es8156_priv *priv = snd_soc_component_get_drvdata(codec);
 
-	//printk("Entered: %s\n", __func__);
+	pr_debug("Entered: %s\n", __func__);
 
 	es8156_set_bias_level(codec, SND_SOC_BIAS_OFF);
 	priv->suspend_reg_00 = snd_soc_component_read(codec, ES8156_RESET_REG00);
@@ -567,7 +567,7 @@ static int es8156_resume(struct snd_soc_component *codec)
 {	
 	struct es8156_priv *priv = snd_soc_component_get_drvdata(codec);
 
-	//printk("Entered: %s\n", __func__);
+	pr_debug("Entered: %s\n", __func__);
 
 	snd_soc_component_write(codec, ES8156_RESET_REG00, priv->suspend_reg_00);
 	snd_soc_component_write(codec, ES8156_MAINCLOCK_CTL_REG01, priv->suspend_reg_01);
@@ -734,6 +734,34 @@ static struct snd_soc_component_driver soc_codec_dev_es8156 = {
 	.num_dapm_routes = ARRAY_SIZE(es8156_dapm_routes),
 };
 
+static ssize_t es8156_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+        return 0;
+}
+
+static ssize_t es8156_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	int i;
+
+	for (i = 0; i < 0x26; i++) {
+		printk("reg 0x%x = 0x%x\n", i, snd_soc_component_read(es8156_codec, i));
+	}
+
+	return 0;
+}
+
+static DEVICE_ATTR(registers, 0644, es8156_show, es8156_store);
+
+static struct attribute *es8156_debug_attrs[] = {
+	&dev_attr_registers.attr,
+	NULL,
+};
+
+static struct attribute_group es8516_debug_attr_group = {
+	.name = "es8156_debug",
+	.attrs = es8156_debug_attrs,
+};
+
 /*
 *es8156 7bit i2c address:CE pin:0 0x08 / CE pin:1 0x09
 */
@@ -849,6 +877,11 @@ static int es8156_i2c_probe(struct i2c_client *i2c,
 				     &soc_codec_dev_es8156,
 				     &es8156_dai, 1);
 	
+	ret = sysfs_create_group(&i2c->dev.kobj, &es8516_debug_attr_group);
+	if (ret) {
+			pr_err("failed to create attr group\n");
+	}
+
 	return ret;
 }
 
