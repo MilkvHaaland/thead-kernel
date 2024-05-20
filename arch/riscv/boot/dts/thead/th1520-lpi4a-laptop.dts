@@ -76,7 +76,15 @@
 		vin-supply = <&reg_sys_vcc_5v>;
 		gpio = <&pcal6408ahk_c 1 1>;
 		enable-active-high;
+		regulator-boot-on;
 		regulator-always-on;
+	};
+
+	sata_pwr_switch: sata-pwr-switch {
+		status = "okay";
+		compatible = "reg-userspace-consumer";
+		regulator-name = "sata-pwr-consumer";
+		vcc-supply = <&reg_sata_vcc_5v>;
 	};
 
 	audio_amp: regulator-audio-amp-en {

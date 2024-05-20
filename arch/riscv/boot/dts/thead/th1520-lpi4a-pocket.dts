@@ -1,0 +1,219 @@
+/* SPDX-License-Identifier: GPL-2.0 */
+/*
+ * Copyright (C) 2023 Sipeed.
+ */
+
+#include "th1520-lpi4a-dsi0-hdmi.dts"
+
+/ {
+	model = "LicheePocket4A 8G";
+	compatible = "thead,light", "sipeed,pocket4a";
+
+	charger: dc-charger {
+		compatible = "gpio-charger";
+		charger-type = "mains";
+		gpios = <&gpio1_porta 3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&uart3 {
+	status = "okay";
+};
+
+&lcd0_backlight {
+        pwms = <&pwm 0 10000>; // 100Khz
+        brightness-levels = <0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35
+        36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75
+        76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100>;
+        default-brightness-level = <30>;
+};
+
+&fan {
+        pwms = <&pwm 1 10000000 0>;
+        //cooling-levels = <0 64 192 255>;
+        cooling-levels = <192 192 192 255>;
+};
+
+&i2c0 {
+	/delete-node/ gpio@18;
+
+	cw2015: cw2015@62 {
+		compatible = "cellwise,cw2015";
+		status = "disabled";
+		reg = <0x62>;
+		cellwise,monitor-interval-ms = <5000>;
+		power-supplies = <&charger>;
+		cellwise,battery-profile = /bits/ 8 <
+			0x17 0x67 0x80 0x73 0x6E 0x6C 0x6B 0x63
+			0x77 0x51 0x5C 0x58 0x50 0x4C 0x48 0x36
+			0x15 0x0C 0x0C 0x19 0x5B 0x7D 0x6F 0x69
+			0x69 0x5B 0x0C 0x29 0x20 0x40 0x52 0x59
+			0x57 0x56 0x54 0x4F 0x3B 0x1F 0x7F 0x17
+			0x06 0x1A 0x30 0x5A 0x85 0x93 0x96 0x2D
+			0x48 0x77 0x9C 0xB3 0x80 0x52 0x94 0xCB
+			0x2F 0x00 0x64 0xA5 0xB5 0x11 0xF0 0x11
+		>;
+	};
+};
+
+&i2c3 {
+	/delete-node/ gpio@18;
+};
+
+&goodix_tp {
+	#gpio-cells = <2>;
+	compatible = "goodix,gt9271";
+	reg = <0x14>;
+	interrupt-parent = <&ao_gpio_porta>;
+	interrupts = <3 0>;
+	irq-gpios = <&ao_gpio_porta 3 0>;
+	reset-gpios = <&pcal6408ahk_c 0 0>;
+	touchscreen-size-x = <800>;
+	touchscreen-size-y = <1280>;
+	status = "okay";
+};
+
+&reg_tp_pwr_en {
+	/delete-property/ gpio;
+};
+
+&reg_usb_hub_vdd1v2 {
+	/delete-property/ gpio;
+};
+
+&vvcam_sensor1 {
+	sensor_pdn = <&gpio1_porta 30 0>;
+	sensor_rst = <&pcal6408ahk_c 2 0>;
+	i2c_bus = /bits/ 8 <0>;
+};
+
+&key_volup {
+	gpios = <&gpio2_porta 16 0x1>;
+};
+
+&reg_usb_hub_vcc5v {
+	/delete-property/ gpio; 
+};
+
+&soc_vdd33_lcd0_en_reg {
+	/delete-property/ gpio; 
+};
+
+&soc_vdd18_lcd0_en_reg {
+	/delete-property/ gpio; 
+};
+
+&soc_avdd28_rgb_reg {
+	/delete-property/ gpio;
+};
+
+&soc_dovdd18_rgb_reg {
+	/delete-property/ gpio;
+};
+
+&soc_dvdd12_rgb_reg {
+	/delete-property/ gpio;
+};
+
+&soc_avdd25_ir_reg {
+	/delete-property/ gpio;
+};
+
+&soc_dovdd18_ir_reg {
+	/delete-property/ gpio;
+};
+
+&soc_dvdd12_ir_reg {
+	/delete-property/ gpio;
+};
+
+&soc_cam2_avdd25_ir_reg {
+	/delete-property/ gpio;
+};
+
+&soc_cam2_dovdd18_ir_reg {
+	/delete-property/ gpio;
+};
+
+&soc_cam2_dvdd12_ir_reg {
+	/delete-property/ gpio;
+};
+
+&dsi0_panel0 {
+	compatible = "chongzhou,cz101b4001", "jadard,jd9365da-h3";
+	backlight = <&lcd0_backlight>;
+	reset-gpio = <&pcal6408ahk_c 3 0>; /* active low */
+	/delete-property/ hsvcc-supply;
+	/delete-property/ vspn3v3-supply;
+};
+
+&usb_1 {
+	/delete-property/ hubswitch-gpio;
+	/delete-property/ hub1v2-supply;
+	/delete-property/ hub5v-supply;
+};
+
+&cpus {
+        c910_0: cpu@0 {
+                operating-points = <
+                        /* kHz    uV */
+                        300000  500000
+                        800000  700000
+                        1500000 800000
+                >;
+                light,dvddm-operating-points = <
+                        /* kHz   uV */
+                        300000  800000
+                        800000  800000
+                        1500000 800000
+                >;
+        };
+        c910_1: cpu@1 {
+                operating-points = <
+                        /* kHz    uV */
+                        300000  500000
+                        800000  700000
+                        1500000 800000
+                >;
+                light,dvddm-operating-points = <
+                        /* kHz   uV */
+                        300000  800000
+                        800000  800000
+                        1500000 800000
+                >;
+        };
+        c910_2: cpu@2 {
+
+                operating-points = <
+                        /* kHz    uV */
+                        300000  500000
+                        800000  700000
+                        1500000 800000
+                >;
+                light,dvddm-operating-points = <
+                        /* kHz   uV */
+                        300000  800000
+                        800000  800000
+                        1500000 800000
+                >;
+        };
+        c910_3: cpu@3 {
+
+                operating-points = <
+                        /* kHz    uV */
+                        300000  500000
+                        800000  700000
+                        1500000 800000
+                >;
+                light,dvddm-operating-points = <
+                        /* kHz   uV */
+                        300000  800000
+                        800000  800000
+                        1500000 800000
+                >;
+        };
+};

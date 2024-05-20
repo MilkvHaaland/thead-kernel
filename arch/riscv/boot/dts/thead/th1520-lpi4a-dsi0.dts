@@ -11,7 +11,7 @@
 };
 
 &i2c3 {
-	touch@14 {
+        goodix_tp: touch@14 {
 		touchscreen-size-x = <800>;
 		touchscreen-size-y = <1200>;
 		status = "okay";

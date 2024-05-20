@@ -295,7 +295,7 @@
 			debounce-interval = <1>;
 			gpios = <&gpio1_porta 19 0x1>;
 		};
-		key-volumeup {
+		key_volup: key-volumeup {
 			label = "Volume Up Key";
 			linux,code = <KEY_VOLUMEUP>;
 			debounce-interval = <1>;
@@ -1174,13 +1174,13 @@
 				>;
 			};
 
-
 			pinctrl_uart3_tx_is_gpio: uart3txisgpiogrp {
 				thead,pins = <
 					FM_UART3_TXD	0x3	0x202
 					FM_UART3_RXD	0x1	0x202
 				>;
 			};
+
 
 
 
@@ -1525,6 +1525,13 @@
 	channel0 {
 		channel_id = <0>;
 		status = "okay";
+		sensor0 {
+			subdev_name = "vivcam";
+			idx = <0>;
+			csi_idx = <0>;
+			mode_idx = <0>;
+			path_type = "SENSOR_VGA_RAW12_LINER";
+		};
 		sensor1 {
 			subdev_name = "vivcam";
 			idx = <3>;
@@ -1550,6 +1557,13 @@
 		};
 	};
 	channel1 {
+		sensor0 {
+			subdev_name = "vivcam";
+			idx = <0>;
+			csi_idx = <0>;
+			mode_idx = <0>;
+			path_type = "SENSOR_VGA_RAW12_LINER";
+		};
 		sensor1 {
 			subdev_name = "vivcam";
 			idx = <3>;
@@ -1570,6 +1584,13 @@
 		};
 	};
 	channel2 {
+		sensor0 {
+			subdev_name = "vivcam";
+			idx = <0>;
+			csi_idx = <0>;
+			mode_idx = <0>;
+			path_type = "SENSOR_VGA_RAW12_LINER";
+		};
 		sensor1 {
 			subdev_name = "vivcam";
 			idx = <3>;
@@ -1595,6 +1616,14 @@
     vi_mem_pool_region = <0>;	// vi_mem: framebuffer, region[0]
 	status = "okay";
     channel0 {
+		sensor0 {
+            subdev_name = "vivcam";
+			idx = <0>;
+			csi_idx = <0>;
+			mode_idx = <0>;
+			path_type = "SENSOR_VGA_RAW12_LINER";
+
+		};
 		sensor1 {
 			subdev_name = "vivcam";
 			idx = <3>;

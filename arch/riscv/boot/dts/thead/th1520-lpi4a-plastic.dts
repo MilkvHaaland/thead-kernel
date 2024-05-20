@@ -1,0 +1,80 @@
+/* SPDX-License-Identifier: GPL-2.0 */
+/*
+ * Copyright (C) 2024 Sipeed.
+ */
+
+#include <dt-bindings/interrupt-controller/irq.h>
+#include "th1520-lpi4a-laptop.dts"
+
+/ {
+        model = "T-HEAD Light Lichee Pi 4A configuration for Plastic laptop";
+};
+
+&dsi0_panel0 {
+	compatible = "cmn,5171_1920x1200_40Hz";
+};
+
+&i2c2 {
+        touchpad: touchpad@2c {
+                compatible = "hid-over-i2c";
+                reg = <0x2c>;
+                hid-descr-addr = <0x0020>;
+                interrupt-parent = <&gpio1_porta>;
+                interrupts = <3 IRQ_TYPE_LEVEL_LOW>;
+        };
+};
+
+&cw2015 {
+	cellwise,battery-profile = /bits/ 8 <
+		0x17 0x67 0x72 0x68 0x66 0x63 0x62 0x5A
+		0x64 0x61 0x4D 0x57 0x5A 0x51 0x43 0x38
+		0x31 0x2A 0x24 0x22 0x29 0x31 0x3E 0x4C
+		0x29 0x4D 0x0B 0x85 0x1C 0x38 0x47 0x57
+		0x5D 0x5E 0x5F 0x60 0x3F 0x1A 0x6F 0x41
+		0x0A 0x43 0x12 0x38 0x7B 0x95 0x9A 0x18
+		0x4B 0x6F 0x9E 0xD5 0x80 0x57 0x87 0xCB
+		0x2F 0x00 0x64 0xA5 0xB5 0x13 0x54 0xB9
+	>;
+};
+
+&lt8911 {
+	// CMN5171
+	//lontium,pclk = <154000000>; // 60Hz
+	lontium,pclk = <127750000>; // 50Hz
+	//lontium,pclk = <757500000>; // 30Hz
+	lontium,hact = <1920>;
+	lontium,vact = <1200>;
+	lontium,hbp = <84>;
+	lontium,hfp = <46>;
+	lontium,vbp = <20>;
+	lontium,vfp = <10>;
+	lontium,hs = <30>;
+	lontium,vs = <6>;
+	lontium,mipi_lane = <2>;
+	lontium,lane_cnt = <2>;
+	lontium,color = <1>; //Color Depth 0:6bit 1:8bit
+	lontium,test = <0>;
+};
+
+&fan_config0 {
+	temperature = <40000>;
+};
+
+&fan_config1 {
+	temperature = <60000>;
+};
+
+&fan_config2 {
+	temperature = <80000>;
+};
+
+&fan {
+        pwms = <&pwm 1 100000 0>;
+        cooling-levels = <0x10 0x30 0x50 0xFF>;
+};
+
+&lcd0_backlight {
+	//pwms = <&pwm 0 50000>;
+	pwms = <&pwm 0 1000000>;
+        default-brightness-level = <40>;
+};

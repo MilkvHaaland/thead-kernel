@@ -32,7 +32,7 @@
 };
 
 &i2c3 {
-	touch@14 {
+	goodix_tp: touch@14 {
 		#gpio-cells = <2>;
 		compatible = "goodix,gt9271";
 		reg = <0x14>;
