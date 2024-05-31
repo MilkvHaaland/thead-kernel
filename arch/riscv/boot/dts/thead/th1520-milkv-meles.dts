@@ -30,7 +30,7 @@
 		reg = <0x0 0x200000 0x1 0xffe00000>;
 	};
 
-	display_subsystem: display-subsystem {
+	display-subsystem {
 		status = "okay";
 	};
 
@@ -38,16 +38,14 @@
 		compatible = "gpio-leds";
 
 		led0 {
-			label = "SYS_STATUS";
+			label = "POWER_LED";
 			gpios = <&gpio1_porta 15 0>;	/* GPIO_ACTIVE_HIGH: 0 */
-			default-state = "off";
 		};
 
 		led1 {
 			label = "USER_LED";
 			gpios = <&gpio1_porta 16 0>;	/* GPIO_ACTIVE_HIGH: 0 */
 			linux,default-trigger = "heartbeat";
-			default-state = "on";
 		};
 	};
 
@@ -56,8 +54,6 @@
 
 		/* config#1: multiple valid regions */
 		iopmp_emmc: IOPMP_EMMC {
-			regions = <0x000000 0x100000>,
-				  <0x100000 0x200000>;
 			attr = <0xFFFFFFFF>;
 			is_default_region;
 		};
@@ -173,6 +169,14 @@
 		iopmp_dsp1: IOPMP_DSP1 {
 			is_default_region;
 		};
+
+		iopmp_audio0: IOPMP_AUDIO0 {
+			is_default_region;
+		};
+
+		iopmp_audio1: IOPMP_AUDIO1 {
+			is_default_region;
+		};
 	};
 
 	mbox_910t_client1: mbox_910t_client1 {
@@ -186,39 +190,16 @@
 		compatible = "thead,light-mbox-client";
 		mbox-names = "906";
 		mboxes = <&mbox_910t 2 0>;
-		status = "disabled";
+		audio-mbox-regmap = <&audio_mbox>;
+		status = "okay";
 	};
 
 	lightsound: lightsound@1 {
-		status = "okay";
 		compatible = "simple-audio-card";
 		simple-audio-card,name = "Light-Sound-Card";
 		#address-cells = <1>;
 		#size-cells = <0>;
-
-		/* I2S - AUDIO SYS CODEC 8156*/
-		simple-audio-card,dai-link@0 {
-			reg = <0>;
-			format = "i2s";
-			cpu {
-				sound-dai = <&i2s1 0>;
-			};
-			codec {
-				sound-dai = <&es8156_audio_codec>;
-			};
-		};
-
-		/* I2S - HDMI */
-		simple-audio-card,dai-link@1 {
-			reg = <1>;
-			format = "i2s";
-			cpu {
-				sound-dai = <&light_i2s 1>;
-			};
-			codec {
-				sound-dai = <&dummy_codec>;
-			};
-		};
+		status = "disabled";
 	};
 
 	light_rpmsg: light_rpmsg {
@@ -229,19 +210,11 @@
 		ranges;
 		rpmsg: rpmsg{
 			vdev-nums = <1>;
-            reg = <0x0 0x1E000000 0 0x10000>;
+			reg = <0x0 0x1E000000 0 0x10000>;
 			compatible = "light,light-rpmsg";
 			log-memory-region = <&audio_log_mem>;
 			status = "okay";
 		};
-	};
-
-	wifi_pwrseq: wifi-pwrseq {
-		status = "okay";
-		compatible = "mmc-pwrseq-simple";
-		reset-gpios = <&gpio0_porta 20 1>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_wireless_power>;
 	};
 
 	dummy_codec: dummy_codec {
@@ -249,6 +222,13 @@
 		compatible = "thead,light-dummy-pcm";
 		status = "okay";
 		sound-name-prefix = "DUMMY";
+	};
+
+	fan: pwm-fan {
+		compatible = "pwm-fan";
+		#cooling-cells = <2>;
+		pwms = <&pwm 2 10000000 0>;
+		cooling-levels = <0 64 192 255>;
 	};
 
 	vdd_5v: regulator-vdd-5v {
@@ -297,7 +277,17 @@
 		gpio = <&gpio2_porta 30 1>;	/* GPIO_ACTIVE_LOW: 1 */
 		regulator-boot-on;
 		regulator-always-on;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_usb_select>;
 		status = "okay";
+	};
+
+	wifi_pwrseq: wifi-pwrseq {
+		status = "okay";
+		compatible = "mmc-pwrseq-simple";
+		reset-gpios = <&gpio0_porta 20 1>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_wireless_power>;
 	};
 
 	board_antenna: board-antenna {
@@ -310,7 +300,7 @@
 		regulator-name = "board_antenna";
 	};
 
-	aon {
+	aon: aon {
 		compatible = "thead,light-aon";
 		mbox-names = "aon";
 		mboxes = <&mbox_910t 1 0>;
@@ -322,148 +312,175 @@
 			#power-domain-cells = <1>;
 		};
 
-			dvdd_cpu_reg: appcpu_dvdd {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "appcpu_dvdd";
-				regulator-min-microvolt = <300000>;
-				regulator-max-microvolt = <1570000>;
-				regulator-type = "dvdd";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9063 vbcore1 */
+		dvdd_cpu_reg: appcpu_dvdd {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "appcpu_dvdd";
+			regulator-min-microvolt = <300000>;
+			regulator-max-microvolt = <1570000>;
+			regulator-type = "dvdd";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			dvddm_cpu_reg: appcpu_dvddm {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "appcpu_dvddm";
-				regulator-min-microvolt = <300000>;
-				regulator-max-microvolt = <1570000>;
-				regulator-type = "dvddm";
-				regulator-dual-rail;
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9063 vbcore */
+		dvddm_cpu_reg: appcpu_dvddm {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "appcpu_dvddm";
+			regulator-min-microvolt = <300000>;
+			regulator-max-microvolt = <1570000>;
+			regulator-type = "dvddm";
+			regulator-dual-rail;
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_dvdd18_aon_reg: soc_dvdd18_aon {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_dvdd18_aon";
-				regulator-type = "common";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9063 vldo3 */
+		soc_dvdd18_aon_reg: soc_dvdd18_aon {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_dvdd18_aon";
+			regulator-type = "common";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_avdd33_usb3_reg: soc_avdd33_usb3 {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_avdd33_usb3";
-				regulator-type = "common";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9063 vldo9 */
+		soc_avdd33_usb3_reg: soc_avdd33_usb3 {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_avdd33_usb3";
+			regulator-type = "common";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_dvdd08_aon_reg: soc_dvdd08_aon {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_dvdd08_aon";
-				regulator-type = "common";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9063 vldo2 */
+		soc_dvdd08_aon_reg: soc_dvdd08_aon {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_dvdd08_aon";
+			regulator-type = "common";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_dvdd08_ddr_reg: soc_dvdd08_ddr {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_dvdd08_ddr";
-				regulator-type = "common";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9063 buckperi */
+		soc_dvdd08_ddr_reg: soc_dvdd08_ddr {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_dvdd08_ddr";
+			regulator-type = "common";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_vdd_ddr_1v8_reg: soc_vdd_ddr_1v8 {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_vdd_ddr_1v8";
-				regulator-type = "common";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9063 vldo4 */
+		soc_vdd_ddr_1v8_reg: soc_vdd_ddr_1v8 {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_vdd_ddr_1v8";
+			regulator-type = "common";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_vdd_ddr_1v1_reg: soc_vdd_ddr_1v1 {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_vdd_ddr_1v1";
-				regulator-type = "common";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9063 buckmem & buckio */
+		soc_vdd_ddr_1v1_reg: soc_vdd_ddr_1v1 {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_vdd_ddr_1v1";
+			regulator-type = "common";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_vdd_ddr_0v6_reg: soc_vdd_ddr_0v6 {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_vdd_ddr_0v6";
-				regulator-type = "common";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9063 buckpro */
+		soc_vdd_ddr_0v6_reg: soc_vdd_ddr_0v6 {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_vdd_ddr_0v6";
+			regulator-type = "common";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_dvdd18_ap_reg: soc_dvdd18_ap {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_dvdd18_ap";
-				regulator-type = "common";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9063 vldo11 */
+		soc_dvdd18_ap_reg: soc_dvdd18_ap {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_dvdd18_ap";
+			regulator-type = "common";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_avdd08_mipi_hdmi_reg: soc_avdd08_mipi_hdmi {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_avdd08_mipi_hdmi";
-				regulator-type = "common";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9121 ex */
+		soc_dvdd08_ap_reg: soc_dvdd08_ap {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_dvdd08_ap";
+			regulator-type = "common";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_avdd18_mipi_hdmi_reg: soc_avdd18_mipi_hdmi {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_avdd18_mipi_hdmi";
-				regulator-type = "common";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9063 vldo1 */
+		soc_avdd08_mipi_hdmi_reg: soc_avdd08_mipi_hdmi {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_avdd08_mipi_hdmi";
+			regulator-type = "common";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_vdd33_emmc_reg: soc_vdd33_emmc {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_dvdd33_emmc";
-				regulator-type = "common";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9063 vldo5 */
+		soc_avdd18_mipi_hdmi_reg: soc_avdd18_mipi_hdmi {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_avdd18_mipi_hdmi";
+			regulator-type = "common";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_vdd18_emmc_reg: soc_vdd18_emmc {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_dvdd18_emmc";
-				regulator-type = "gpio";
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		/* da9063 vldo10 */
+		soc_vdd33_emmc_reg: soc_vdd33_emmc {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_dvdd33_emmc";
+			regulator-type = "common";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_dovdd18_scan_reg: soc_dovdd18_scan {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_dovdd18_scan";
-				regulator-type = "common";
-				regulator-min-microvolt = <1800000>;
-				regulator-max-microvolt = <1800000>;
-				regulator-boot-on;
-				regulator-always-on;
-			};
+		soc_vdd18_emmc_reg: soc_vdd18_emmc {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_dvdd18_emmc";
+			regulator-type = "gpio";
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_dvdd12_scan_reg: soc_dvdd12_scan {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_dvdd12_scan";
-				regulator-type = "common";
-				regulator-min-microvolt = <900000>;
-				regulator-max-microvolt = <3600000>;
-			};
+		/* da9063 vldo6 */
+		soc_dovdd18_scan_reg: soc_dovdd18_scan {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_dovdd18_scan";
+			regulator-type = "common";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-boot-on;
+			regulator-always-on;
+		};
 
-			soc_avdd28_scan_en_reg: soc_avdd28_scan_en {
-				compatible = "thead,light-dialog-pmic";
-				regulator-name = "soc_avdd28_scan_en";
-				regulator-type = "common";
-				regulator-min-microvolt = <900000>;
-				regulator-max-microvolt = <3600000>;
-			};
+		/* da9063 vldo8 */
+		soc_dvdd12_scan_reg: soc_dvdd12_scan {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_dvdd12_scan";
+			regulator-type = "common";
+			regulator-min-microvolt = <900000>;
+			regulator-max-microvolt = <3600000>;
+			status = "disabled";
+		};
+
+		/* da9063 gpio4 */
+		soc_avdd28_scan_en_reg: soc_avdd28_scan_en {
+			compatible = "thead,light-dialog-pmic";
+			regulator-name = "soc_avdd28_scan_en";
+			regulator-type = "common";
+			regulator-min-microvolt = <900000>;
+			regulator-max-microvolt = <3600000>;
+			status = "disabled";
+		};
 
 		c910_cpufreq {
 			compatible = "thead,light-mpw-cpufreq";
@@ -474,6 +491,54 @@
 			compatible = "thead,light-aon-test";
 		};
 	};
+
+	thermal-zones {
+		cpu-thermal-zone {
+			sustainable-power = <1600>;
+
+			trips {
+				fan_config0: fan-trip0 {
+					temperature = <40000>;
+					hysteresis = <5000>;
+					type = "active";
+				};
+
+				fan_config1: fan-trip1 {
+					temperature = <50000>;
+					hysteresis = <5000>;
+					type = "active";
+				};
+
+				fan_config2: fan-trip2 {
+					temperature = <60000>;
+					hysteresis = <5000>;
+					type = "active";
+				};
+			};
+
+			cooling-maps {
+				fan-on {
+					trip = <&fan_config0>;
+					cooling-device =
+						<&fan 1 1>;
+				};
+				fan-faster {
+					trip = <&fan_config1>;
+					cooling-device =
+						<&fan 2 2>;
+				};
+				fan-full {
+					trip = <&fan_config2>;
+					cooling-device =
+						<&fan 3 3>;
+				};
+			};
+		};
+
+		dev-thermal-zone {
+			sustainable-power = <3000>;
+		};
+	};
 };
 
 &aon_suspend_ctrl {
@@ -482,55 +547,54 @@
 };
 
 &cmamem {
-	alloc-ranges = <0 0xe4000000 0 0x14000000>; // [0xE400_0000 ~ 0xF800_0000]
+	size = <0 0x20000000>; // 512MB on lpi4a (SOM)
+	alloc-ranges = <0 0xd8000000 0 0x20000000>; // [0x0D800_0000 ~ 0x0F800_0000]
 };
 
 &resmem {
 	#address-cells = <2>;
 	#size-cells = <2>;
 	ranges;
+	//Note: with "no-map" reserv mem not saved in hibernation
+	tee_mem: memory@1c000000 {
+		reg = <0x0 0x1c000000 0 0x2000000>;
+		no-map;
+	};
 
-	tee_mem: memory@1a000000 {
-		reg = <0x0 0x1a000000 0 0x4000000>;
+	dsp0_mem: memory@20000000 {             /**0x2000_0000~0x2040_0000 4M**/
+		reg = <0x0 0x20000000 0x0 0x00280000   /* DSP FW code&data section 2.5M*/ 
+               0x0 0x20280000 0x0 0x00001000   /* DSP communication area 4K*/ 
+               0x0 0x20281000 0x0 0x00007000  /* Panic/log page 28K */
+               0x0 0x20288000 0x0 0x00178000>;  /* DSP shared memory 1.5M-32K*/
+	};
+	dsp1_mem: memory@20400000 {             /**0x2040_0000~0x2080_0000 4M**/
+		reg = <0x0 0x20400000 0x0 0x00280000  /* DSP FW code&data section */
+               0x0 0x20680000 0x0 0x00001000 /* DSP communication area */
+               0x0 0x20681000 0x0 0x00007000    /* Panic/log page*/ 
+               0x0 0x20688000 0x0 0x00178000>;  /* DSP shared memory */
+	};
+	vi_mem: framebuffer@10000000 {
+		reg = <0x0 0x10000000 0x0 0x6700000>;	/* vi_mem_pool_region[0]  44 MB (default) */
+		       //0x0 0x12C00000 0x0 0x01D00000	/* vi_mem_pool_region[1]  29 MB */
+		       //0x0 0x14900000 0x0 0x01E00000>;	/* vi_mem_pool_region[2]  30 MB */
 		no-map;
 	};
-	dsp0_mem: memory@20000000 {			/**0x2000_0000~0x2040_0000 4M**/
-		reg = <0x0 0x20000000 0x0 0x00280000	/* DSP FW code&data section 2.5M*/
-		       0x0 0x20280000 0x0 0x00001000	/* DSP communication area 4K*/
-		       0x0 0x20281000 0x0 0x00007000	/* Panic/log page 28K */
-		       0x0 0x20288000 0x0 0x00178000>;	/* DSP shared memory 1.5M-32K*/
-		no-map;
-	};
-	dsp1_mem: memory@20400000 {			/**0x2040_0000~0x2080_0000 4M**/
-		reg = <0x0 0x20400000 0x0 0x00280000	/* DSP FW code&data section */
-		       0x0 0x20680000 0x0 0x00001000	/* DSP communication area */
-		       0x0 0x20681000 0x0 0x00007000	/* Panic/log page*/
-		       0x0 0x20688000 0x0 0x00178000>;	/* DSP shared memory */
-		no-map;
-	};
-	vi_mem: framebuffer@0f800000 {
-		reg = <0x0 0x0F800000 0x0 0x05400000	/* vi_mem_pool_region[0]  84 MB (default) */
-		       0x0 0x14C00000 0x0 0x01D00000	/* vi_mem_pool_region[1]  29 MB */
-		       0x0 0x16900000 0x0 0x03200000>;	/* vi_mem_pool_region[2]  50 MB */
-		no-map;
-	};
-	facelib_mem: memory@22000000 {
-		reg = <0x0 0x22000000 0x0 0x10000000>;
-		no-map;
+	facelib_mem: memory@17000000 {
+		reg = <0x0 0x17000000 0 0x02000000>;
 	};
 	audio_text_mem: memory@32000000 {
 		reg = <0x0 0x32000000 0x0 0xE00000>;
 		//no-map;
-    };
-    audio_data_mem: memory@32E00000 {
+	};
+	audio_data_mem: memory@32E00000 {
 		reg = <0x0 0x32E00000 0x0 0x600000>;
 		//no-map;
-    };
+	};
 	audio_log_mem: memory@33400000 {
-        reg = <0x0 0x33400000 0x0 0x200000>;
+		reg = <0x0 0x33400000 0x0 0x200000>;
 	};
 	aon_log_mem: memory@33600000 {
-        reg = <0x0 0x33600000 0x0 0x200000>;
+		reg = <0x0 0x33600000 0x0 0x200000>;
 	};
 	regdump_mem: memory@38400000 {
 		reg = <0x0 0x38400000 0x0 0x1E00000>;
@@ -543,39 +607,82 @@
 
 &adc {
 	vref-supply = <&reg_vref_1v8>;
+	#io-channel-cells = <1>;
 	status = "okay";
-};
-
-&pwm {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pwm>;
-};
-
-&i2c0 {
-	clock-frequency = <400000>;
-	status = "disabled";
-};
-
-&i2c1 {
-	clock-frequency = <400000>;
-	status = "disabled";
 };
 
 &audio_i2c0 {
 	clock-frequency = <100000>;
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_audiopa6>,
+			<&pinctrl_audiopa7>,
+			<&pinctrl_audio_i2c0>;
 
 	es8156_audio_codec: es8156@9 {
 		#sound-dai-cells = <0>;
 		compatible = "everest,es8156";
 		reg = <0x09>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_audio_i2s1_mclk>;
+		sound-name-prefix = "ES8156";
+		mclk-sclk-ratio = <4>;
 	};
 };
 
 &uart0 {
 	clock-frequency = <100000000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart0>;
+	status = "okay";
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart1>;
+	status = "disabled";
+};
+
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart3>;
+	status = "disabled";
+};
+
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart4>;
+	status = "okay";
+};
+
+&qspi0 {
+	status = "okay";
+	num-cs = <1>;
+	cs-gpios = <&gpio2_porta 3 0>; // GPIO_ACTIVE_HIGH: 0
+
+	spi_flash: spi-flash@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "jedec,spi-nor";
+		reg = <0x0>;
+		spi-max-frequency = <50000000>;
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <1>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			loader@0 {
+				label = "loader";
+				reg = <0x0 0x800000>;
+			};
+		};
+	};
+};
+
+&qspi1 {
+	status = "disabled";
 };
 
 &gmac0 {
@@ -619,6 +726,8 @@
 	pull_up;
 	wprtn_ignore;
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_sdio0>;
 };
 
 &sdhci1 {
@@ -652,8 +761,22 @@
 		 */
 		pinctrl_uart0: uart0grp {
 			thead,pins = <
-				FM_UART0_TXD	0x0	0x72
-				FM_UART0_RXD	0x0	0x72
+				FM_UART0_TXD	0x0	0x202
+				FM_UART0_RXD	0x0	0x202
+			>;
+		};
+
+		pinctrl_i2c2: i2c2grp {
+			thead,pins = <
+				FM_I2C2_SCL	0x0	0x204
+				FM_I2C2_SDA	0x0	0x204
+			>;
+		};
+
+		pinctrl_i2c3: i2c3grp {
+			thead,pins = <
+				FM_I2C3_SCL	0x0	0x204
+				FM_I2C3_SDA	0x0	0x204
 			>;
 		};
 
@@ -668,17 +791,87 @@
 
 		pinctrl_qspi0: qspi0grp {
 			thead,pins = <
-				FM_QSPI0_SCLK	0x0	0x20f
-				FM_QSPI0_CSN0	0x3	0x20f
+				FM_QSPI0_SCLK		0x0	0x20f
+				FM_QSPI0_CSN0		0x3	0x20f
 				FM_QSPI0_D0_MOSI	0x0	0x23f
 				FM_QSPI0_D1_MISO	0x0	0x23f
 			>;
 		};
 
+		pinctrl_light_i2s0: i2s0grp {
+			thead,pins = <
+				FM_QSPI0_SCLK    0x2    0x208
+				FM_QSPI0_CSN0    0x2    0x238
+				FM_QSPI0_CSN1    0x2    0x208
+				FM_QSPI0_D0_MOSI 0x2    0x238
+				FM_QSPI0_D1_MISO 0x2    0x238
+				FM_QSPI0_D2_WP   0x2    0x238
+				FM_QSPI0_D3_HOLD 0x2    0x238
+			>;
+		};
+
+		pinctrl_gmac1: gmac1grp {
+			thead,pins = <
+				FM_GPIO2_18	0x1	0x20f	/*	GMAC1_TX_CLK  */
+				FM_GPIO2_19	0x1	0x20f	/*	GMAC1_RX_CLK  */
+				FM_GPIO2_20	0x1	0x20f	/*	GMAC1_TXEN  */
+				FM_GPIO2_21	0x1	0x20f	/*	GMAC1_TXD0  */
+				FM_GPIO2_22	0x1	0x20f	/*	GMAC1_TXD1  */
+				FM_GPIO2_23	0x1	0x20f	/*	GMAC1_TXD2  */
+				FM_GPIO2_24	0x1	0x20f	/*	GMAC1_TXD3  */
+				FM_GPIO2_25	0x1	0x20f	/*	GMAC1_RXDV  */
+				FM_GPIO2_30	0x1	0x20f	/*	GMAC1_RXD0  */
+				FM_GPIO2_31	0x1	0x20f	/*	GMAC1_RXD1  */
+				FM_GPIO3_0	0x1	0x20f	/*	GMAC1_RXD2  */
+				FM_GPIO3_1	0x1	0x20f	/*	GMAC1_RXD3  */
+			>;
+		};
+
+		pinctrl_usb_select: usb-select-grp {
+			thead,pins = <
+				FM_GPIO2_30	0x0	0x0
+			>;
+		};
+
+		pinctrl_sdio0: sdio0grp {
+			thead,pins = <
+				FM_SDIO0_DETN	0x0	0x202
+			>;
+		};
+
 		pinctrl_pwm: pwmgrp {
 			thead,pins = <
-				FM_QSPI0_D2_WP  0x1     0x208   /* pwm5 */
-				FM_QSPI0_CSN1   0x1     0x208   /* pwm2 */
+				FM_QSPI0_D2_WP	0x1	0x208   /* pwm5 */
+				FM_QSPI0_CSN1	0x1	0x208   /* pwm2 */
+			>;
+		};
+
+		pinctrl_hdmi: hdmigrp {
+			thead,pins = <
+				FM_HDMI_SCL	0x0	0x202
+				FM_HDMI_SDA	0x0	0x202
+				FM_HDMI_CEC	0x0	0x202
+			>;
+		};
+
+		pinctrl_gmac0: gmac0grp {
+			thead,pins = <
+				FM_GMAC0_TX_CLK	0x0	0x20f	/*	GMAC0_TX_CLK  */
+				FM_GMAC0_RX_CLK	0x0	0x20f	/*	GMAC0_RX_CLK  */
+				FM_GMAC0_TXEN	0x0	0x20f	/*	GMAC0_TXEN  */
+				FM_GMAC0_TXD0	0x0	0x20f	/*	GMAC0_TXD0  */
+				FM_GMAC0_TXD1	0x0	0x20f	/*	GMAC0_TXD1  */
+				FM_GMAC0_TXD2	0x0	0x20f	/*	GMAC0_TXD2  */
+				FM_GMAC0_TXD3	0x0	0x20f	/*	GMAC0_TXD3  */
+				FM_GMAC0_RXDV	0x0	0x20f	/*	GMAC0_RXDV  */
+				FM_GMAC0_RXD0	0x0	0x20f	/*	GMAC0_RXD0  */
+				FM_GMAC0_RXD1	0x0	0x20f	/*	GMAC0_RXD1  */
+				FM_GMAC0_RXD2	0x0	0x20f	/*	GMAC0_RXD2  */
+				FM_GMAC0_RXD3	0x0	0x20f	/*	GMAC0_RXD3  */
+				FM_GMAC0_MDC	0x0 0x208	/*	GMAC0_MDC  */
+				FM_GMAC0_MDIO	0x0 0x208	/*	GMAC0_MDIO  */
+				FM_GMAC0_COL	0x3	0x232	/*	PHY0_nRST  */
+				FM_GMAC0_CRS	0x3	0x232	/*	PHY0_nINT  */
 			>;
 		};
 	};
@@ -690,52 +883,77 @@
 		 * Pin Configuration Node:
 		 * Format: <pin_id mux_node config>
 		 */
-		pinctrl_uart3: uart3grp {
+		pinctrl_qspi1: qspi1grp {
 			thead,pins = <
-				FM_UART3_TXD	0x0	0x72
-				FM_UART3_RXD	0x0	0x72
+				FM_QSPI1_SCLK    0x0    0x20a
+				FM_QSPI1_CSN0    0x3    0x20a
+				FM_QSPI1_D0_MOSI 0x0    0x23a
+				FM_QSPI1_D1_MISO 0x0    0x23a
+			>;
+		};
+
+		pinctrl_i2c0: i2c0grp {
+			thead,pins = <
+				FM_I2C0_SCL	0x0	0x204
+				FM_I2C0_SDA	0x0	0x204
+			>;
+		};
+
+		pinctrl_i2c1: i2c1grp {
+			thead,pins = <
+				FM_I2C1_SCL	0x0	0x204
+				FM_I2C1_SDA	0x0	0x204
+			>;
+		};
+
+		pinctrl_uart1: uart1grp {
+			thead,pins = <
+				FM_UART1_TXD	0x0	0x202
+				FM_UART1_RXD	0x0	0x202
 			>;
 		};
 
 		pinctrl_uart4: uart4grp {
 			thead,pins = <
-				FM_UART4_TXD	0x0	0x72
-				FM_UART4_RXD	0x0	0x72
-				FM_UART4_CTSN	0x0	0x72
-				FM_UART4_RTSN	0x0	0x72
+				FM_UART4_TXD	0x0	0x202
+				FM_UART4_RXD	0x0	0x202
+				FM_UART4_CTSN	0x0	0x202
+				FM_UART4_RTSN	0x0	0x202
 			>;
 		};
 
-		pinctrl_qspi1: qspi1grp {
+		pinctrl_uart3: uart3grp {
 			thead,pins = <
-				FM_QSPI1_SCLK	0x0	0x20a
-				FM_QSPI1_CSN0	0x3	0x20a
-				FM_QSPI1_D0_MOSI	0x0	0x23a
-				FM_QSPI1_D1_MISO	0x0	0x23a
-				FM_QSPI1_D2_WP	0x0	0x23a
-				FM_QSPI1_D3_HOLD	0x0	0x23a
+				FM_UART3_TXD	0x1	0x202
+				FM_UART3_RXD	0x1	0x202
 			>;
 		};
 
-		pinctrl_iso7816: iso7816grp {
-			thead,pins = <
-				FM_QSPI1_SCLK	0x1	0x208
-				FM_QSPI1_D0_MOSI	0x1	0x238
-				FM_QSPI1_D1_MISO	0x1	0x238
-				FM_QSPI1_D2_WP	0x1	0x238
-				FM_QSPI1_D3_HOLD	0x1	0x238
-			>;
-		};
-
-		pinctrl_wireless_power: wireless-power-group {
+		pinctrl_wireless_power: wireless-power-grp {
 			thead,pins = <
 				FM_GPIO0_20	0x0	0x23a
 			>;
 		};
 
-		pinctrl_wireless_host_wake: wireless-host-wake-group {
+		pinctrl_wireless_host_wake: wireless-host-wake-grp {
 			thead,pins = <
 				FM_GPIO0_21	0x0	0x21a
+			>;
+		};
+
+		pinctrl_iso7816: iso7816grp {
+			thead,pins = <
+				FM_QSPI1_SCLK		0x1	0x208
+				FM_QSPI1_D0_MOSI	0x1	0x238
+				FM_QSPI1_D1_MISO	0x1	0x238
+				FM_QSPI1_D2_WP		0x1	0x238
+				FM_QSPI1_D3_HOLD	0x1	0x238
+			>;
+		};
+
+		pinctrl_volume: volume_grp {
+			thead,pins = <
+				FM_CLK_OUT_2  0x3     0x208
 			>;
 		};
 	};
@@ -747,29 +965,63 @@
 		 * Pin Configuration Node:
 		 * Format: <pin_id mux_node config>
 		 */
-
 		pinctrl_audiopa1: audiopa1_grp {
 			thead,pins = <
 				FM_AUDIO_PA1	0x3	0x72
 			>;
 		};
-
 		pinctrl_audiopa2: audiopa2_grp {
 			thead,pins = <
 				FM_AUDIO_PA2	0x0	0x72
 			>;
 		};
-
-		pinctrl_volume: volume_grp {
-			thead,pins = <
-				FM_CPU_JTG_TDI	0x3	0x208
-				FM_CPU_JTG_TDO	0x3	0x208
-			>;
+		pinctrl_audiopa6: audiopa6 {
+			thead,pins = < FM_AUDIO_PA6 LIGHT_PIN_FUNC_0 0x000 >;
+		};
+		pinctrl_audiopa7: audiopa7 {
+			thead,pins = < FM_AUDIO_PA7 LIGHT_PIN_FUNC_0 0x000 >;
+		};
+		pinctrl_audiopa13: audiopa13 {
+			thead,pins = < FM_AUDIO_PA13 LIGHT_PIN_FUNC_0 0x000 >;
+		};
+		pinctrl_audiopa14: audiopa14 {
+			thead,pins = < FM_AUDIO_PA14 LIGHT_PIN_FUNC_0 0x000 >;
+		};
+		pinctrl_audiopa15: audiopa15 {
+			thead,pins = < FM_AUDIO_PA15 LIGHT_PIN_FUNC_0 0x000 >;
+		};
+		pinctrl_audiopa16: audiopa16 {
+			thead,pins = < FM_AUDIO_PA16 LIGHT_PIN_FUNC_0 0x000 >;
+		};
+		pinctrl_audiopa17: audiopa17 {
+			thead,pins = < FM_AUDIO_PA17 LIGHT_PIN_FUNC_0 0x000 >;
+		};
+		pinctrl_audiopa18: audiopa18 {
+			thead,pins = < FM_AOGPIO_7 LIGHT_PIN_FUNC_1 0x000 >;
+		};
+		pinctrl_audiopa19: audiopa19 {
+			thead,pins = < FM_AOGPIO_8 LIGHT_PIN_FUNC_1 0x000 >;
+		};
+		pinctrl_audiopa21: audiopa21 {
+			thead,pins = < FM_AOGPIO_10 LIGHT_PIN_FUNC_1 0x000 >;
+		};
+		pinctrl_audiopa22: audiopa22 {
+			thead,pins = < FM_AOGPIO_11 LIGHT_PIN_FUNC_1 0x000 >;
+		};
+		pinctrl_audiopa29: audiopa29 {
+			thead,pins = < FM_AUDIO_PA29 LIGHT_PIN_FUNC_0 0x000 >;
+		};
+		pinctrl_audiopa30: audiopa30 {
+			thead,pins = < FM_AUDIO_PA30 LIGHT_PIN_FUNC_0 0x000 >;
+		};
+		pinctrl_sleep: sleep_grp {
+			thead,pins = <FM_CPU_JTG_TCLK 0x3   0x238 >;
 		};
 	};
 };
 
 &padctrl_audiosys {
+
 	status = "okay";
 
 	light-audio-padctrl {
@@ -778,26 +1030,75 @@
 		 * Format: <pin_id mux_node config>
 		 */
 
-		pinctrl_audio_i2s1_mclk: audio_i2s1_mclk_grp {
+		pinctrl_audio_i2c0: audio_i2c0_grp {
 			thead,pins = <
-				FM_AUDIO_IO_PA13	0x0	0x20a
+				FM_AUDIO_IO_PA6		LIGHT_PIN_FUNC_0 0x07f
+				FM_AUDIO_IO_PA7		LIGHT_PIN_FUNC_0 0x07f
+			>;
+		};
+
+		pinctrl_audio_i2c1: audio_i2c1_grp {
+			thead,pins = <
+				FM_AUDIO_IO_PA6     LIGHT_PIN_FUNC_2 0x004
+				FM_AUDIO_IO_PA7     LIGHT_PIN_FUNC_2 0x004
+			>;
+		};
+		pinctrl_audio_i2s1: audio_i2s1_grp {
+			thead,pins = <
+				FM_AUDIO_IO_PA13   LIGHT_PIN_FUNC_0 0x008
+				FM_AUDIO_IO_PA14   LIGHT_PIN_FUNC_0 0x008
+				FM_AUDIO_IO_PA15   LIGHT_PIN_FUNC_0 0x008
+				FM_AUDIO_IO_PA16   LIGHT_PIN_FUNC_0 0x008
+				FM_AUDIO_IO_PA17   LIGHT_PIN_FUNC_0 0x008
+			>;
+		};
+		pinctrl_audio_i2s2: audio_i2s2_grp {
+			thead,pins = <
+				FM_AUDIO_IO_PA18   LIGHT_PIN_FUNC_0 0x008
+				FM_AUDIO_IO_PA19   LIGHT_PIN_FUNC_0 0x008
+				FM_AUDIO_IO_PA21   LIGHT_PIN_FUNC_0 0x008
+				FM_AUDIO_IO_PA22   LIGHT_PIN_FUNC_0 0x008
 			>;
 		};
 	};
 };
 
-&xtensa_dsp {
-	status = "okay";
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm>;
 };
 
-&xtensa_dsp0 {
-	status = "okay";
-	memory-region = <&dsp0_mem>;
+&i2c0 {
+	clock-frequency = <400000>;
+	status = "disabled";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c0>;
 };
 
-&xtensa_dsp1{
-	status = "okay";
-	memory-region = <&dsp1_mem>;
+&i2c1 {
+	clock-frequency = <400000>;
+	status = "disabled";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c1>;
+};
+
+&i2c2 {
+	clock-frequency = <400000>;
+	status = "disabled";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c2>;
+};
+
+&i2c3 {
+	clock-frequency = <400000>;
+	status = "disabled";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c3>;
+};
+
+&i2c4 {
+	clock-frequency = <400000>;
+	status = "disabled";
 };
 
 &trng {
@@ -834,102 +1135,25 @@
 	status = "okay";
 };
 
-&fce {
-	memory-region = <&facelib_mem>;
-	status = "okay";
-};
-
-&light_regdump {
-	memory-region = <&regdump_mem>;
-	status = "okay";
-};
-
-&cpus {
-	c910_0: cpu@0 {
-		operating-points = <
-			/* kHz    uV */
-			300000	650000
-			800000	700000
-			1500000	800000
-			1848000	1000000
-		>;
-		light,dvddm-operating-points = <
-			/* kHz   uV */
-			300000	800000
-			800000	800000
-			1500000	800000
-			1848000	1000000
-		>;
-	};
-
-	c910_1: cpu@1 {
-		operating-points = <
-			/* kHz    uV */
-			300000	650000
-			800000	700000
-			1500000	800000
-			1848000	1000000
-		>;
-		light,dvddm-operating-points = <
-			/* kHz   uV */
-			300000	800000
-			800000	800000
-			1500000	800000
-			1848000	1000000
-		>;
-	};
-
-	c910_2: cpu@2 {
-		operating-points = <
-			/* kHz    uV */
-			300000	650000
-			800000	700000
-			1500000	800000
-			1848000	1000000
-		>;
-		light,dvddm-operating-points = <
-			/* kHz   uV */
-			300000	800000
-			800000	800000
-			1500000	800000
-			1848000	1000000
-		>;
-	};
-
-	c910_3: cpu@3 {
-		operating-points = <
-			/* kHz    uV */
-			300000	650000
-			800000	700000
-			1500000	800000
-			1848000	1000000
-		>;
-		light,dvddm-operating-points = <
-			/* kHz   uV */
-			300000	800000
-			800000	800000
-			1500000	800000
-			1848000	1000000
-		>;
-	};
-};
-
-&dpu {
-	status = "okay";
-};
-
 &npu_opp_table {
 	opp-1000000000 {
 		opp-suspend;
 	};
 };
 
-/* DP1 --- HDMI0 */
+&fce {
+	memory-region = <&facelib_mem>;
+	status = "okay";
+};
+
 &dpu_enc1 {
-	status = "disabled";
 	ports {
 		/delete-node/ port@0;
 	};
+};
+
+&dpu {
+	status = "okay";
 };
 
 &disp1_out {
@@ -938,6 +1162,8 @@
 
 &hdmi_tx {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hdmi>;
 
 	port@0 {
 		/* input */
@@ -949,8 +1175,6 @@
 
 &light_i2s {
 	status = "okay";
-	/delete-property/ pinctrl-names;
-	/delete-property/ pinctrl-0;
 };
 
 &i2s0 {
@@ -959,36 +1183,211 @@
 
 &i2s1 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_audiopa13>,
+		<&pinctrl_audiopa14>,
+		<&pinctrl_audiopa15>,
+		<&pinctrl_audiopa16>,
+		<&pinctrl_audiopa17>,
+		<&pinctrl_audio_i2s1>;
 };
 
-&qspi0 {
+&light_regdump {
+	memory-region = <&regdump_mem>;
 	status = "okay";
-	num-cs = <1>;
-	cs-gpios = <&gpio2_porta 3 0>; // GPIO_ACTIVE_HIGH: 0
+};
 
-	spi_flash: spi-flash@0 {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		compatible = "jedec,spi-nor";
-		reg = <0x0>;
-		spi-max-frequency = <50000000>;
-		spi-tx-bus-width = <1>;
-		spi-rx-bus-width = <1>;
-		status = "okay";
+&lightsound {
+	status = "okay";
+	compatible = "simple-audio-card";
+	simple-audio-card,name = "Light-Sound-Card";
+	#address-cells = <1>;
+	#size-cells = <0>;
 
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
+	/* I2S - AUDIO SYS CODEC 8156*/
+	simple-audio-card,dai-link@0 {
+		reg = <0>;
+		format = "i2s";
+		cpu {
+			sound-dai = <&i2s1 0>;
+		};
+		codec {
+			sound-dai = <&es8156_audio_codec>;
+		};
+	};
 
-			loader@0 {
-				label = "loader";
-				reg = <0x0 0x800000>;
-			};
+	/* I2S - HDMI */
+	simple-audio-card,dai-link@1 {
+		reg = <1>;
+		format = "i2s";
+		cpu {
+			sound-dai = <&light_i2s 1>;
+		};
+		codec {
+			sound-dai = <&dummy_codec>;
 		};
 	};
 };
 
-&qspi1 {
-	status = "disabled";
+&cpus {
+	c910_0: cpu@0 {
+		operating-points = <
+			/* kHz    uV */
+			300000	600000
+			400000  700000
+			500000  700000
+			600000  700000
+			702000  700000
+			800000	700000
+			900000	800000
+			1000000	800000
+			1104000	800000
+			1200000	800000
+			1296000 800000
+			1404000 800000
+			1500000	800000
+			1608000 1000000
+			1704000	1000000
+			1848000 1000000
+		>;
+		light,dvddm-operating-points = <
+			/* kHz   uV */
+			300000	800000
+			400000  800000
+			500000  800000
+			600000  800000
+			702000  800000
+			800000	800000
+			900000	800000
+			1000000	800000
+			1104000	800000
+			1200000	800000
+			1296000 800000
+			1404000 800000
+			1500000	800000
+			1608000 1000000
+			1704000	1000000
+			1848000 1000000
+		>;
+	};
+	c910_1: cpu@1 {
+		operating-points = <
+			/* kHz    uV */
+			300000	600000
+			400000  700000
+			500000  700000
+			600000  700000
+			702000  700000
+			800000	700000
+			900000	800000
+			1000000	800000
+			1104000	800000
+			1200000	800000
+			1296000 800000
+			1404000 800000
+			1500000	800000
+			1608000 1000000
+			1704000	1000000
+			1848000 1000000
+		>;
+		light,dvddm-operating-points = <
+			/* kHz   uV */
+			300000	800000
+			400000  800000
+			500000  800000
+			600000  800000
+			702000  800000
+			800000	800000
+			900000	800000
+			1000000	800000
+			1104000	800000
+			1200000	800000
+			1296000 800000
+			1404000 800000
+			1500000	800000
+			1608000 1000000
+			1704000	1000000
+			1848000 1000000
+		>;
+	};
+	c910_2: cpu@2 {
+		operating-points = <
+			/* kHz    uV */
+			300000	600000
+			400000  700000
+			500000  700000
+			600000  700000
+			702000  700000
+			800000	700000
+			900000	800000
+			1000000	800000
+			1104000	800000
+			1200000	800000
+			1296000 800000
+			1404000 800000
+			1500000	800000
+			1608000 1000000
+			1704000	1000000
+			1848000 1000000
+		>;
+		light,dvddm-operating-points = <
+			/* kHz   uV */
+			300000	800000
+			400000  800000
+			500000  800000
+			600000  800000
+			702000  800000
+			800000	800000
+			900000	800000
+			1000000	800000
+			1104000	800000
+			1200000	800000
+			1296000 800000
+			1404000 800000
+			1500000	800000
+			1608000 1000000
+			1704000	1000000
+			1848000 1000000
+		>;
+	};
+	c910_3: cpu@3 {
+		operating-points = <
+			/* kHz    uV */
+			300000	600000
+			400000  700000
+			500000  700000
+			600000  700000
+			702000  700000
+			800000	700000
+			900000	800000
+			1000000	800000
+			1104000	800000
+			1200000	800000
+			1296000 800000
+			1404000 800000
+			1500000	800000
+			1608000 1000000
+			1704000	1000000
+			1848000 1000000
+		>;
+		light,dvddm-operating-points = <
+			/* kHz   uV */
+			300000	800000
+			400000  800000
+			500000  800000
+			600000  800000
+			702000  800000
+			800000	800000
+			900000	800000
+			1000000	800000
+			1104000	800000
+			1200000	800000
+			1296000 800000
+			1404000 800000
+			1500000	800000
+			1608000 1000000
+			1704000	1000000
+			1848000 1000000
+		>;
+	};
 };
