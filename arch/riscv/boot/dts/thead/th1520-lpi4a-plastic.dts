@@ -39,16 +39,14 @@
 
 &lt8911 {
 	// CMN5171
-	//lontium,pclk = <154000000>; // 60Hz
-	lontium,pclk = <127750000>; // 50Hz
-	//lontium,pclk = <757500000>; // 30Hz
+	lontium,pclk = <160000000>; // 60Hz
 	lontium,hact = <1920>;
 	lontium,vact = <1200>;
-	lontium,hbp = <84>;
-	lontium,hfp = <46>;
+	lontium,hbp = <105>;
+	lontium,hfp = <58>;
 	lontium,vbp = <20>;
 	lontium,vfp = <10>;
-	lontium,hs = <30>;
+	lontium,hs = <37>;
 	lontium,vs = <6>;
 	lontium,mipi_lane = <2>;
 	lontium,lane_cnt = <2>;
