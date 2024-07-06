@@ -848,12 +848,11 @@
 
 		pinctrl_hdmi: hdmigrp {
 			thead,pins = <
-				FM_HDMI_SCL	0x0	0x202
-				FM_HDMI_SDA	0x0	0x202
-				FM_HDMI_CEC	0x0	0x202
+				FM_HDMI_SCL	0x0	0x208
+				FM_HDMI_SDA	0x0	0x208
+				FM_HDMI_CEC	0x0	0x208
 			>;
 		};
-
 		pinctrl_gmac0: gmac0grp {
 			thead,pins = <
 				FM_GMAC0_TX_CLK	0x0	0x20f	/*	GMAC0_TX_CLK  */
