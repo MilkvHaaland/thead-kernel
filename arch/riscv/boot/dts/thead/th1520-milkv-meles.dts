@@ -848,9 +848,9 @@
 
 		pinctrl_hdmi: hdmigrp {
 			thead,pins = <
-				FM_HDMI_SCL	0x0	0x202
-				FM_HDMI_SDA	0x0	0x202
-				FM_HDMI_CEC	0x0	0x202
+				FM_HDMI_SCL	0x0	0x208
+				FM_HDMI_SDA	0x0	0x208
+				FM_HDMI_CEC	0x0	0x208
 			>;
 		};
 
