@@ -37,6 +37,7 @@
 		i2c2 = &i2c2;
 		i2c3 = &i2c3;
 		i2c4 = &i2c4;
+		i2c5 = &i2c5;
 		audio_i2c0 = &audio_i2c0;
         audio_i2c1 = &audio_i2c1;
 		mmc0 = &emmc;
@@ -2239,6 +2240,31 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+		};
+
+		i2c5: i2c@fff7f2c000{
+			compatible = "snps,designware-i2c";
+			reg = <0xff 0xf7f2c000 0x0 0x4000>;
+			interrupt-parent = <&intc>;
+			interrupts = <49>;
+			clocks = <&clk CLKGEN_I2C5_PCLK>;
+			clock-names = "pclk";
+			clock-frequency = <100000>;
+			i2c_mode = "dma";
+			dmas = <&dmac0 22>, <&dmac0 23>;
+			dma-names = "tx", "rx";
+			#dma-cells = <1>;
+			ss_hcnt = /bits/ 16 <0x104>;
+			ss_lcnt = /bits/ 16 <0xec>;
+			fs_hcnt = /bits/ 16 <0x37>;
+			fs_lcnt = /bits/ 16 <0x42>;
+			fp_hcnt = /bits/ 16 <0x14>;
+			fp_lcnt = /bits/ 16 <0x1a>;
+			hs_hcnt = /bits/ 16 <0x9>;
+			hs_lcnt = /bits/ 16 <0x11>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		audio_i2c0: i2c@0xffcb01a000 {
